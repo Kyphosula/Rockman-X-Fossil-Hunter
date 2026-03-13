@@ -35,6 +35,7 @@ var
   storeMatch: seq[string]
   direction: string
   scrollDirection: bool
+  dashMult: float
 
 let walkTextures: seq[tuple[kind: PathComponent, path: string]] = 
   toSeq(walkDir("textures", relative = true))
@@ -268,9 +269,9 @@ proc checkSlide(direction: string): bool =
         entities[0].jumpBuffer -= 1
         case direction
         of "right":
-          entities[0].accel[0] -= 1.5
+          entities[0].accel[0] -= 1.5 * dashMult
         of "left":
-          entities[0].accel[0] += 1.5
+          entities[0].accel[0] += 1.5 * dashMult
       if entities[0].vel[1] < 0: entities[0].vel[1] = 0
       if entities[0].accel[1] < 0: entities[0].accel[1] = 0
     return true
@@ -278,9 +279,11 @@ proc checkSlide(direction: string): bool =
 proc update(dt: float) =
   if entities[0].isGrounded == true or slide != 1:
     if isKeyDown(V):
+      dashMult = 2
       entities[0].maxVel[0] = 2 * storeValues[storeMatching("maxVelX")].toInt
       entities[0].maxAccel[0] = 2 * storeValues[storeMatching("maxAccelX")]
     elif entities[0].isGrounded or slide != 1:
+      dashMult = 1
       entities[0].maxVel[0] = storeValues[storeMatching("maxVelX")].toInt
       entities[0].maxAccel[0] = storeValues[storeMatching("maxAccelX")]
 
@@ -290,9 +293,9 @@ proc update(dt: float) =
       if entities[0].isGrounded == true:
         if entities[0].vel[1] < 0: entities[0].vel[1] = 0
         if entities[0].accel[1] < 0: entities[0].accel[1] = 0 
-        entities[0].accel[0] += 2
+        entities[0].accel[0] += 2 * dashMult
       else:
-        entities[0].accel[0] += 0.3
+        entities[0].accel[0] += 0.3 * dashMult
 
   elif not isKeyDown(LEFT):
     slide = 1
@@ -308,9 +311,9 @@ proc update(dt: float) =
       if entities[0].isGrounded == true:
         if entities[0].vel[1] > 0: entities[0].vel[1] = 0
         if entities[0].accel[1] > 0: entities[0].accel[1] = 0
-        entities[0].accel[0] -= 2
+        entities[0].accel[0] -= 2 * dashMult
       else:
-        entities[0].accel[0] -= 0.3
+        entities[0].accel[0] -= 0.3 * dashMult
 
   elif not isKeyDown(RIGHT):
     slide = 1
