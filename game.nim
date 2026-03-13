@@ -271,7 +271,9 @@ proc checkSlide(direction: string): bool =
   if collision(0, direction, true) == true:
     if entities[0].isGrounded == false:
       entities[0].isGrounded = true
-      if isKeyPressed(C): 
+      slide = 0.05
+      if isKeyPressed(C):
+        slide = 1
         entities[0].isGrounded = false
         entities[0].jumpBuffer -= 1
         case direction
@@ -279,7 +281,6 @@ proc checkSlide(direction: string): bool =
           entities[0].accelX -= 1.5
         of "left":
           entities[0].accelX += 1.5
-      slide = 0.05
       if entities[0].velY < 0: entities[0].velY = 0
       if entities[0].accelY < 0: entities[0].accelY = 0
     return true
@@ -330,7 +331,6 @@ proc update(dt: float) =
         entities[0].velX = 0
 
   if isKeyDown(C):
-    if isKeyPressed(C): slide = 1
     if entities[0].isGrounded == true or entities[0].jumpBuffer < entities[0].maxJumpBuffer:
       if entities[0].jumpBuffer > 0:
         entities[0].accelY -= 20
