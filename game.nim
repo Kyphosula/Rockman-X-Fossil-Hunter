@@ -160,7 +160,6 @@ proc collision(id: int, direction: string, hit: bool): bool =
             eSeq[id].accel[1] = 0
         return true
 
-
 proc move(id: int, scroll: bool) =
   eSeq[id].isGrounded = collision(id, "down", false)
 
@@ -251,11 +250,14 @@ proc update(dt: float) =
 
   if isKeyDown(RIGHT):
     if checkSlide("right") == false:
-      slide = 1 
       if eSeq[0].isGrounded == true:
+        slide = 1 
         if eSeq[0].vel[1] < 0: eSeq[0].vel[1] = 0
         if eSeq[0].accel[1] < 0: eSeq[0].accel[1] = 0 
         eSeq[0].accel[0] += 2 * dashMult
+      elif slide != 1:
+        slide  = 1
+        eSeq[0].accel[0] += 1 * dashMult
       else:
         eSeq[0].accel[0] += 0.3 * dashMult
 
@@ -269,11 +271,14 @@ proc update(dt: float) =
 
   if isKeyDown(LEFT):
     if checkSlide("left") == false:
-      slide = 1
       if eSeq[0].isGrounded == true:
+        slide = 1
         if eSeq[0].vel[1] > 0: eSeq[0].vel[1] = 0
         if eSeq[0].accel[1] > 0: eSeq[0].accel[1] = 0
         eSeq[0].accel[0] -= 2 * dashMult
+      elif slide != 1:
+        slide = 1
+        eSeq[0].accel[0] -= 1 * dashMult
       else:
         eSeq[0].accel[0] -= 0.3 * dashMult
 
