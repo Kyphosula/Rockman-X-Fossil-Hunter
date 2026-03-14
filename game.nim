@@ -1,22 +1,11 @@
 import std/[os, sequtils, strutils, strformat, math]
-import kirpi
+import kirpi, entities
 
 const
   screenWidth: int = 800
   screenHeight: int = 600
   bits: int = 64
   gravity: float = 1.5
-
-type entity = object
-  textureName: string
-  colX1, colY1: float
-  colX2, colY2: float
-  isGrounded: bool
-  jumpBuffer: int
-  maxJumpBuffer: int
-
-  vel, maxVel: array[2, int]
-  accel, maxAccel, size, pos: array[2, float]
 
 var 
   textures: seq[Texture]
@@ -28,11 +17,8 @@ var
   scrollVertical: array[2, bool]
   scrollSet: array[2, float]
   upperX, upperY: int
-  entities: seq[entity]
-  blankEntitiy: entity
+  eSeq: seq[entity]
   slide: float
-  storeValues: seq[float]
-  storeMatch: seq[string]
   direction: string
   scrollDirection: bool
   dashMult: float
@@ -40,32 +26,12 @@ var
 let walkTextures: seq[tuple[kind: PathComponent, path: string]] = 
   toSeq(walkDir("textures", relative = true))
 
-proc storeMatching(name: string): int = 
-  if storeMatch.len > 0:
-    for i in 0 .. storeMatch.len - 1:
-      if storeMatch[i] == name:
-        return i
-
-proc storeAdd(name: string, value: float) =
-  storeValues.add(value)
-  storeMatch.add(name)
 
 proc createPlayer() =
-  entities.add(blankEntitiy)
-  entities[0].textureName = "Rockman_X"
-  entities[0].colX1 = 0
-  entities[0].colY1 = 6
-  entities[0].colX2 = 64
-  entities[0].colY2 = 128
-  entities[0].jumpBuffer = 15
-  entities[0].maxjumpBuffer = 15
-  entities[0].maxAccel = [5, 50]
-  entities[0].maxVel = [5, 10]
-  entities[0].size = [64, 128]
-
-  storeAdd("maxVelX", entities[0].maxVel[0].toFloat)
-  storeAdd("maxVelY", entities[0].maxVel[1].toFloat)
-  storeAdd("maxAccelX", entities[0].maxAccel[0])
+  eSeq.add(createEntity("Rockman_X"))
+  storeAdd("maxVelX", eSeq[0].maxVel[0].toFloat)
+  storeAdd("maxVelY", eSeq[0].maxVel[1].toFloat)
+  storeAdd("maxAccelX", eSeq[0].maxAccel[0])
 
 proc match(search: string, option: int): Texture =
   for i in 0 .. textureList.len - 1:
@@ -88,11 +54,11 @@ proc loadMap(name: string) =
     startPosition: seq[string] =
       readFile("maps/" & name & "/start").splitLines[0].split(',')
   
-  entities[0].pos[0] = startPosition[0].parseFloat * bits.toFloat
-  entities[0].pos[1] = startHeight + startPosition[1].parseFloat * bits.toFloat
+  eSeq[0].pos[0] = startPosition[0].parseFloat * bits.toFloat
+  eSeq[0].pos[1] = startHeight + startPosition[1].parseFloat * bits.toFloat
   scrollSet[1] = screenHeight div 2
   if startHeight == 0: 
-    scrollSet[1] = entities[0].pos[1] + entities[0].size[1]
+    scrollSet[1] = eSeq[0].pos[1] + eSeq[0].size[1]
 
   scrollSet[0] = screenWidth div 2
   textures.setLen(loadTextures.len - 1)
@@ -143,11 +109,11 @@ proc drawMap(name: string) =
       let tileX: float = x.toFloat * bits.toFloat
       draw(tile, tileX - scrollPos[0], tileY - scrollPos[1])
   
-  for id in 0 .. entities.len - 1:
+  for id in 0 .. eSeq.len - 1:
     draw(
-      match(entities[id].textureName, 1), 
-      entities[id].pos[0] - scrollPos[0], 
-      entities[id].pos[1] - scrollPos[1]
+      match(eSeq[id].textureName, 1), 
+      eSeq[id].pos[0] - scrollPos[0], 
+      eSeq[id].pos[1] - scrollPos[1]
     )
 
 proc checkTile(x, y: int): char =
@@ -156,72 +122,72 @@ proc checkTile(x, y: int): char =
 
 proc collision(id: int, direction: string, hit: bool): bool =
   let 
-    posX: float = entities[id].pos[0]
-    posY: float = entities[id].pos[1] - startHeight
-    lowerYBound: int = (posY + entities[id].colY1).toInt
-    upperYBound: int = (posY + entities[id].colY2).toInt - 1
-    lowerXBound: int = (posX + entities[id].colX1).toInt
-    upperXBound: int = (posX + entities[id].colX2).toInt - 1
+    posX: float = eSeq[id].pos[0]
+    posY: float = eSeq[id].pos[1] - startHeight
+    lowerYBound: int = (posY + eSeq[id].colY1).toInt
+    upperYBound: int = (posY + eSeq[id].colY2).toInt - 1
+    lowerXBound: int = (posX + eSeq[id].colX1).toInt
+    upperXBound: int = (posX + eSeq[id].colX2).toInt - 1
 
   case direction
   of "right":
     for i in lowerYBound .. upperYBound:
-      if checkTile((posX + entities[id].colX2).toInt, i) != ' ':
+      if checkTile((posX + eSeq[id].colX2).toInt, i) != ' ':
         if hit == true:
-          entities[id].vel[0] = 0
-          if entities[id].accel[0] > 0:
-            entities[id].accel[0] = 0
+          eSeq[id].vel[0] = 0
+          if eSeq[id].accel[0] > 0:
+            eSeq[id].accel[0] = 0
         return true
 
   of "left":
     for i in lowerYBound .. upperYBound:
-      if checkTile((posX + entities[id].colX1).toInt - 1, i) != ' ':
+      if checkTile((posX + eSeq[id].colX1).toInt - 1, i) != ' ':
         if hit == true:
-          entities[id].vel[0] = 0
-          if entities[id].accel[0] < 0:
-            entities[id].accel[0] = 0
+          eSeq[id].vel[0] = 0
+          if eSeq[id].accel[0] < 0:
+            eSeq[id].accel[0] = 0
         return true
 
   of "down":
     for i in lowerXBound .. upperXBound:
-      if checkTile(i, (posY + entities[id].colY2).toInt) != ' ':
-        entities[id].isGrounded = true
+      if checkTile(i, (posY + eSeq[id].colY2).toInt) != ' ':
+        eSeq[id].isGrounded = true
         if hit == true:
-          entities[id].vel[1] = 0
-          if entities[id].accel[1] < 0:
-            entities[id].accel[1] = 0
+          eSeq[id].vel[1] = 0
+          if eSeq[id].accel[1] < 0:
+            eSeq[id].accel[1] = 0
         return true
 
   of "up":
     for i in lowerXBound .. upperXBound:
-      if checkTile(i, (posY + entities[id].colY1).toInt - 1) != ' ':
+      if checkTile(i, (posY + eSeq[id].colY1).toInt - 1) != ' ':
         if hit == true:
-          entities[id].vel[1] = 0
-          if entities[id].accel[1] < 0:
-            entities[id].accel[1] = 0
+          eSeq[id].vel[1] = 0
+          if eSeq[id].accel[1] < 0:
+            eSeq[id].accel[1] = 0
         return true
 
 
 proc move(id: int, scroll: bool) =
-  entities[id].isGrounded = collision(id, "down", false)
+  eSeq[id].isGrounded = collision(id, "down", false)
 
   for i in 0 .. 1:
-    var accel: float = entities[id].accel[i]
+    var accel: float = eSeq[id].accel[i]
     if accel.abs != 0:
       let accelDirection: float = accel / accel.abs
-      let maxAccel: float = entities[id].maxAccel[i]
+      let maxAccel: float = eSeq[id].maxAccel[i]
       if accel.abs > maxAccel:
         accel = maxAccel * accelDirection
-        entities[id].accel[i] = accel
+        eSeq[id].accel[i] = accel
 
-    entities[id].vel[i] += accel.trunc.toInt
-    var vel: int = entities[id].vel[i]
+    eSeq[id].vel[i] += accel.trunc.toInt
+    var vel: int = eSeq[id].vel[i]
     if vel.abs != 0: 
       let velDirection: int = vel div vel.abs
-      var maxVel: int = entities[id].maxVel[i]
+      var maxVel: int = eSeq[id].maxVel[i]
       if vel.abs > maxVel:
         vel = maxVel * velDirection
-        entities[id].vel[i] = vel
+        eSeq[id].vel[i] = vel
 
       for j in 0 .. vel.abs:
         setScrollBounds(i)
@@ -236,9 +202,9 @@ proc move(id: int, scroll: bool) =
           if collision(id, direction, true) == false:
             if scroll == true:
               if scrollDirection == true:
-                if entities[id].pos[i] + (entities[id].size[i] / 2) - scrollPos[i] >= scrollSet[i]:
+                if eSeq[id].pos[i] + (eSeq[id].size[i] / 2) - scrollPos[i] >= scrollSet[i]:
                   scrollPos[i] += 1
-            entities[id].pos[i] += 1
+            eSeq[id].pos[i] += 1
         if vel < 0:
           if i == 0: 
             direction = "left"
@@ -250,9 +216,9 @@ proc move(id: int, scroll: bool) =
           if collision(id, direction, true) == false:
             if scroll == true:
               if scrollDirection == true:
-                if entities[id].pos[i] + (entities[id].size[i] / 2) - scrollPos[i] <= scrollSet[i]:
+                if eSeq[id].pos[i] + (eSeq[id].size[i] / 2) - scrollPos[i] <= scrollSet[i]:
                   scrollPos[i] -= 1
-            entities[id].pos[i] -= 1
+            eSeq[id].pos[i] -= 1
 
 proc load() =
   createPlayer()
@@ -260,87 +226,87 @@ proc load() =
 
 proc checkSlide(direction: string): bool =
   if collision(0, direction, true) == true:
-    if entities[0].isGrounded == false:
-      entities[0].isGrounded = true
+    if eSeq[0].isGrounded == false:
+      eSeq[0].isGrounded = true
       slide = 0.05
       if isKeyPressed(C):
         slide = 1
-        entities[0].isGrounded = false
-        entities[0].jumpBuffer -= 1
+        eSeq[0].isGrounded = false
+        eSeq[0].jumpBuffer -= 1
         case direction
         of "right":
-          entities[0].accel[0] -= 1.5 * dashMult
+          eSeq[0].accel[0] -= 1.5 * dashMult
         of "left":
-          entities[0].accel[0] += 1.5 * dashMult
-      if entities[0].vel[1] < 0: entities[0].vel[1] = 0
-      if entities[0].accel[1] < 0: entities[0].accel[1] = 0
+          eSeq[0].accel[0] += 1.5 * dashMult
+      if eSeq[0].vel[1] < 0: eSeq[0].vel[1] = 0
+      if eSeq[0].accel[1] < 0: eSeq[0].accel[1] = 0
     return true
 
 proc update(dt: float) =
-  if entities[0].isGrounded == true or slide != 1:
+  if eSeq[0].isGrounded == true or slide != 1:
     if isKeyDown(V):
       dashMult = 2
-      entities[0].maxVel[0] = 2 * storeValues[storeMatching("maxVelX")].toInt
-      entities[0].maxAccel[0] = 2 * storeValues[storeMatching("maxAccelX")]
-    elif entities[0].isGrounded or slide != 1:
+      eSeq[0].maxVel[0] = 2 * storeMatching("maxVelX").toInt
+      eSeq[0].maxAccel[0] = 2 * storeMatching("maxAccelX")
+    elif eSeq[0].isGrounded or slide != 1:
       dashMult = 1
-      entities[0].maxVel[0] = storeValues[storeMatching("maxVelX")].toInt
-      entities[0].maxAccel[0] = storeValues[storeMatching("maxAccelX")]
+      eSeq[0].maxVel[0] = storeMatching("maxVelX").toInt
+      eSeq[0].maxAccel[0] = storeMatching("maxAccelX")
 
   if isKeyDown(RIGHT):
     if checkSlide("right") == false:
       slide = 1 
-      if entities[0].isGrounded == true:
-        if entities[0].vel[1] < 0: entities[0].vel[1] = 0
-        if entities[0].accel[1] < 0: entities[0].accel[1] = 0 
-        entities[0].accel[0] += 2 * dashMult
+      if eSeq[0].isGrounded == true:
+        if eSeq[0].vel[1] < 0: eSeq[0].vel[1] = 0
+        if eSeq[0].accel[1] < 0: eSeq[0].accel[1] = 0 
+        eSeq[0].accel[0] += 2 * dashMult
       else:
-        entities[0].accel[0] += 0.3 * dashMult
+        eSeq[0].accel[0] += 0.3 * dashMult
 
   elif not isKeyDown(LEFT):
     slide = 1
-    if entities[0].vel[0] > 0:
-      entities[0].accel[0] -= 5
-      if entities[0].vel[0] + entities[0].accel[0].trunc.toInt <= 0:
-        entities[0].accel[0] = 0
-        entities[0].vel[0] = 0
+    if eSeq[0].vel[0] > 0:
+      eSeq[0].accel[0] -= 5
+      if eSeq[0].vel[0] + eSeq[0].accel[0].trunc.toInt <= 0:
+        eSeq[0].accel[0] = 0
+        eSeq[0].vel[0] = 0
 
   if isKeyDown(LEFT):
     if checkSlide("left") == false:
       slide = 1
-      if entities[0].isGrounded == true:
-        if entities[0].vel[1] > 0: entities[0].vel[1] = 0
-        if entities[0].accel[1] > 0: entities[0].accel[1] = 0
-        entities[0].accel[0] -= 2 * dashMult
+      if eSeq[0].isGrounded == true:
+        if eSeq[0].vel[1] > 0: eSeq[0].vel[1] = 0
+        if eSeq[0].accel[1] > 0: eSeq[0].accel[1] = 0
+        eSeq[0].accel[0] -= 2 * dashMult
       else:
-        entities[0].accel[0] -= 0.3 * dashMult
+        eSeq[0].accel[0] -= 0.3 * dashMult
 
   elif not isKeyDown(RIGHT):
     slide = 1
-    if entities[0].vel[0] < 0:
-      entities[0].accel[0] += 2
-      if entities[0].vel[0] + entities[0].accel[0].trunc.toInt >= 0:
-        entities[0].accel[0] = 0
-        entities[0].vel[0] = 0
+    if eSeq[0].vel[0] < 0:
+      eSeq[0].accel[0] += 2
+      if eSeq[0].vel[0] + eSeq[0].accel[0].trunc.toInt >= 0:
+        eSeq[0].accel[0] = 0
+        eSeq[0].vel[0] = 0
 
   if isKeyDown(C):
-    if entities[0].isGrounded == true or entities[0].jumpBuffer < entities[0].maxJumpBuffer:
-      if entities[0].jumpBuffer > 0:
-        entities[0].accel[1] -= 20
-        entities[0].jumpBuffer -= 1
+    if eSeq[0].isGrounded == true or eSeq[0].jumpBuffer < eSeq[0].maxJumpBuffer:
+      if eSeq[0].jumpBuffer > 0:
+        eSeq[0].accel[1] -= 20
+        eSeq[0].jumpBuffer -= 1
       else:
-        entities[0].accel[1] = gravity * slide + 1
+        eSeq[0].accel[1] = gravity * slide + 1
   else:
-    if entities[0].isGrounded == true:
-      entities[0].jumpBuffer = entities[0].maxJumpBuffer
+    if eSeq[0].isGrounded == true:
+      eSeq[0].jumpBuffer = eSeq[0].maxJumpBuffer
     else:
-      entities[0].jumpBuffer = 0
-    entities[0].accel[1] = gravity * slide + 1
+      eSeq[0].jumpBuffer = 0
+    eSeq[0].accel[1] = gravity * slide + 1
 
   if isKeyPressed(ESCAPE):
     quit()
  
-  entities[0].maxVel[1] = (storeValues[storeMatching("maxVelY")] * slide).toInt + 1
+  eSeq[0].maxVel[1] = (storeMatching("maxVelY") * slide).toInt + 1
 
   move(0, true)
 
