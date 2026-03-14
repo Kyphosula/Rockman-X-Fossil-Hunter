@@ -1,6 +1,6 @@
 import os, strutils
 
-type 
+type
   entity* = object
     textureName*: string
     colX1*, colY1*: float

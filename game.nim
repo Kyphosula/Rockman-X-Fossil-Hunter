@@ -2,8 +2,8 @@ import std/[os, sequtils, strutils, strformat, math]
 import kirpi, entities
 
 const
-  screenWidth: int = 800
-  screenHeight: int = 600
+  screenWidth: int = 1920
+  screenHeight: int = 1080
   bits: int = 64
   gravity: float = 1.5
 
@@ -25,13 +25,6 @@ var
 
 let walkTextures: seq[tuple[kind: PathComponent, path: string]] = 
   toSeq(walkDir("textures", relative = true))
-
-
-proc createPlayer() =
-  eSeq.add(createEntity("Rockman_X"))
-  storeAdd("maxVelX", eSeq[0].maxVel[0].toFloat)
-  storeAdd("maxVelY", eSeq[0].maxVel[1].toFloat)
-  storeAdd("maxAccelX", eSeq[0].maxAccel[0])
 
 proc match(search: string, option: int): Texture =
   for i in 0 .. textureList.len - 1:
@@ -220,10 +213,6 @@ proc move(id: int, scroll: bool) =
                   scrollPos[i] -= 1
             eSeq[id].pos[i] -= 1
 
-proc load() =
-  createPlayer()
-  loadMap("test")
-
 proc checkSlide(direction: string): bool =
   if collision(0, direction, true) == true:
     if eSeq[0].isGrounded == false:
@@ -241,6 +230,13 @@ proc checkSlide(direction: string): bool =
       if eSeq[0].vel[1] < 0: eSeq[0].vel[1] = 0
       if eSeq[0].accel[1] < 0: eSeq[0].accel[1] = 0
     return true
+
+proc load() =
+  eSeq.add(createEntity("Rockman_X"))
+  storeAdd("maxVelX", eSeq[0].maxVel[0].toFloat)
+  storeAdd("maxVelY", eSeq[0].maxVel[1].toFloat)
+  storeAdd("maxAccelX", eSeq[0].maxAccel[0])
+  loadMap("test")
 
 proc update(dt: float) =
   if eSeq[0].isGrounded == true or slide != 1:
@@ -316,7 +312,8 @@ proc draw() =
   drawMap("test")
 
 proc config(appSettings:var AppSettings) =
-  appSettings.window.width=screenWidth
-  appSettings.window.height=screenHeight
+  appSettings.window.width = screenWidth
+  appSettings.window.height = screenHeight
+  appSettings.window.fullscreen = true
 
 run("Rockman X Fossil Hunter",load,update,draw,config)
