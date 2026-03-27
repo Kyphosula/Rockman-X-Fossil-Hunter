@@ -178,6 +178,7 @@ proc move(id: int, scroll: bool) =
       let velDirection: int = vel div vel.abs
       var maxVel: int = eSeq[id].maxVel[i]
       if vel.abs > maxVel:
+        eSeq[id].accel[i] = 0
         vel = maxVel * velDirection
         eSeq[id].vel[i] = vel
 
