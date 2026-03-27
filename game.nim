@@ -181,36 +181,39 @@ proc move(id: int, scroll: bool) =
         vel = maxVel * velDirection
         eSeq[id].vel[i] = vel
 
+      var k: float
+      var z: int
+      if vel < 0:
+        if i == 0: direction = "left"
+        else: direction = "up"
+        k = -1
+        z = 0
+
+      else:
+        if i == 0: direction = "right"
+        else: direction = "down"
+        k = 1
+        z = 1
+          
       for j in 0 .. vel.abs:
         setScrollBounds(i)
-        if vel > 0:
-          if i == 0: 
-            direction = "right"
-            scrollDirection = scrollHorizontal[1]
-          else: 
-            direction = "down"
-            scrollDirection = scrollVertical[1]
-
-          if collision(id, direction, true) == false:
-            if scroll == true:
-              if scrollDirection == true:
-                if eSeq[id].pos[i] + (eSeq[id].size[i] / 2) - scrollPos[i] >= scrollSet[i]:
-                  scrollPos[i] += 1
-            eSeq[id].pos[i] += 1
-        if vel < 0:
-          if i == 0: 
-            direction = "left"
-            scrolldirection = scrollHorizontal[0]
-          else: 
-            direction = "up"
-            scrollDirection = scrollVertical[0]
-
-          if collision(id, direction, true) == false:
-            if scroll == true:
-              if scrollDirection == true:
+        if i == 0: scrollDirection = scrollHorizontal[z]
+        else: scrollDirection = scrollVertical[z]
+        if collision(id, direction, true) == false:
+          if scroll == true:
+            if scrollDirection == true:
+              if k == -1:
                 if eSeq[id].pos[i] + (eSeq[id].size[i] / 2) - scrollPos[i] <= scrollSet[i]:
                   scrollPos[i] -= 1
-            eSeq[id].pos[i] -= 1
+              else:
+                if eSeq[id].pos[i] + (eSeq[id].size[i] / 2) - scrollPos[i] >= scrollSet[i]:
+                  scrollPos[i] += 1            
+          eSeq[id].pos[i] += k
+
+proc moveAll(scrollTarget: int) =
+  for i in 0 .. eSeq.len - 1:
+    if i == scrollTarget: move(i, true)
+    else: move(i, false)
 
 proc checkSlide(direction: string): bool =
   if collision(0, direction, true) == true:
@@ -309,7 +312,8 @@ proc update(dt: float) =
  
   eSeq[0].maxVel[1] = (storeMatching("maxVelY") * slide).toInt + 1
 
-  move(0, true)
+  #move(0, true)
+  moveAll(0)
 
 proc draw() =
   clear(Black)
