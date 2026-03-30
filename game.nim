@@ -17,7 +17,7 @@ var
   scrollVertical: array[2, bool]
   scrollSet: array[2, float]
   upperX, upperY: int
-  eSeq: seq[entity]
+  eSeq: seq[base]
   slide: float
   direction: string
   scrollDirection: bool
@@ -166,16 +166,16 @@ proc collision(id: int, direction: string, hit: bool): bool =
             eSeq[id].accel[1] = 0
         return true
 
-
 var k: float
 var z: int
 proc move(id: int, scroll: bool): bool =
   eSeq[id].isGrounded = collision(id, "down", false)
   if eSeq[id].variant == "projectile":
     if eSeq[id].accel[0] == 0:
-      eSeq.delete(id)
-      displacement += 1
-      return true
+      if eSeq[id].vel[0] == 0:
+        eSeq.delete(id)
+        displacement += 1
+        return true
 
   for i in 0 .. 1:
     var accel: float = eSeq[id].accel[i]
@@ -241,7 +241,7 @@ proc checkSlide(direction: string): bool =
       if isKeyPressed(C):
         slide = 1
         eSeq[0].isGrounded = false
-        eSeq[0].jumpBuffer -= 1
+        player(eSeq[0]).jumpBuffer -= 1
         case direction
         of "right":
           eSeq[0].accel[0] -= 1.5 * dashMult
@@ -252,7 +252,7 @@ proc checkSlide(direction: string): bool =
     return true
 
 proc load() =
-  eSeq.add(createEntity([0.0, 0.0], "Rockman_X"))
+  eSeq.add(createEntity([0.0, 0.0], "entities/Rockman_X"))
   storeAdd("maxVelX", eSeq[0].maxVel[0].toFloat)
   storeAdd("maxVelY", eSeq[0].maxVel[1].toFloat)
   storeAdd("maxAccelX", eSeq[0].maxAccel[0])
@@ -260,16 +260,16 @@ proc load() =
 
 proc update(dt: float) =
   if eSeq[0].isGrounded == true or slide != 1:
-    if isKeyDown(V) and eSeq[0].dashBuffer > 0:
+    if isKeyDown(V) and player(eSeq[0]).dashBuffer > 0:
       dashMult = 2
       eSeq[0].maxVel[0] = 2 * storeMatching("maxVelX").toInt
       eSeq[0].maxAccel[0] = 2 * storeMatching("maxAccelX")
       if slide == 1:
         eSeq[0].accel[0] += storeMatching("maxAccelX") * eSeq[0].facing
-        eSeq[0].dashBuffer -= 1
+        player(eSeq[0]).dashBuffer -= 1
     else:
       if not isKeyDown(V):
-        eSeq[0].dashBuffer = eSeq[0].maxDashBuffer
+        player(eSeq[0]).dashBuffer = player(eSeq[0]).maxDashBuffer
       dashMult = 1
       eSeq[0].maxVel[0] = storeMatching("maxVelX").toInt
       eSeq[0].maxAccel[0] = storeMatching("maxAccelX")
@@ -321,21 +321,23 @@ proc update(dt: float) =
         eSeq[0].vel[0] = 0
 
   if isKeyDown(C):
-    if eSeq[0].isGrounded == true or eSeq[0].jumpBuffer < eSeq[0].maxJumpBuffer:
-      if eSeq[0].jumpBuffer > 0:
+    if eSeq[0].isGrounded == true or player(eSeq[0]).jumpBuffer < player(eSeq[0]).maxJumpBuffer:
+      if player(eSeq[0]).jumpBuffer > 0:
         eSeq[0].accel[1] -= 20
-        eSeq[0].jumpBuffer -= 1
+        player(eSeq[0]).jumpBuffer -= 1
       else:
         eSeq[0].accel[1] = gravity * slide + 1
   else:
     if eSeq[0].isGrounded == true:
-      eSeq[0].jumpBuffer = eSeq[0].maxJumpBuffer
+      player(eSeq[0]).jumpBuffer = player(eSeq[0]).maxJumpBuffer
     else:
-      eSeq[0].jumpBuffer = 0
+      player(eSeq[0]).jumpBuffer = 0
     eSeq[0].accel[1] = gravity * slide + 1
 
   if isKeyPressed(X):
-    eSeq.add(createEntity(eSeq[0].pos, "lemonShot"))
+    let px: float = eSeq[0].pos[0] + bits.toFloat
+    let py: float = eSeq[0].pos[1] + bits / 2
+    eSeq.add(createEntity([px, py], "projectiles/lemonShot"))
     eSeq[^1].accel[0] = eSeq[0].facing
 
   if isKeyPressed(ESCAPE):
