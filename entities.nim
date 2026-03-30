@@ -5,13 +5,13 @@ type
     variant*: string
     textureName*: string
     facing*: float
-    isGrounded*: bool
     colX1*, colY1*: float
     colX2*, colY2*: float
     vel*, maxVel*: array[2, int]
     accel*, maxAccel*, size*, pos*: array[2, float]
   
   player* = ref object of base
+    isGrounded*: bool
     jumpBuffer*, maxJumpBuffer*: int
     dashBuffer*, maxDashBuffer*: int
 
