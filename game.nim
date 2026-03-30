@@ -231,7 +231,7 @@ proc moveAll(scrollTarget: int) =
           skip = true
 
     elif variant == "player":
-      player(eSeq[id]).isGrounded = collision(id, "down", false)
+      player(eSeq[id - displacement]).isGrounded = collision(id, "down", false)
 
     if skip == false:
       if id == scrollTarget: move(id - displacement, true)
