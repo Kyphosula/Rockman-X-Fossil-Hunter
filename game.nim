@@ -221,13 +221,12 @@ proc move(id: int, scroll: bool) =
 proc moveAll(scrollTarget: int) =
   displacement = 0
   for id in 0 .. eSeq.len - 1:
-    if id > eSeq.len - 1: break
     var skip: bool
-    let variant: string = eSeq[id].variant
+    let variant: string = eSeq[id - displacement].variant
     if variant == "projectile":
-      if eSeq[id].accel[0] == 0:
-        if eSeq[id].vel[0] == 0:
-          eSeq.delete(id)
+      if eSeq[id - displacement].accel[0] == 0:
+        if eSeq[id - displacement].vel[0] == 0:
+          eSeq.delete(id - displacement)
           displacement += 1
           skip = true
 
