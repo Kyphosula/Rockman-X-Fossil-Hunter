@@ -223,7 +223,7 @@ proc updateAll(scrollTarget: int) =
   for id in 0 .. eSeq.len - 1:
     let eDex: int = id - displacement
 
-    if eSeq[eDex].vel[0] != 0:
+    if eSeq[eDex].vel[0] != 0 or slide != 1:
       eSeq[eDex].textureName = directionalSprites(
         eSeq[eDex].textureName,
         eSeq[eDex].facing
