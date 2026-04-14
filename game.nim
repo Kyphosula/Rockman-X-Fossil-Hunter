@@ -330,7 +330,10 @@ proc update(dt: float) =
         eSeq[0].accel[0] += 2 * dashMult * pFact
       elif slide != 1:
         slide = 1
-        eSeq[0].accel[0] += dashMult * pFact
+        if eSeq[0].accel[0] < 1:
+          eSeq[0].accel[0] = 1
+        else:
+          eSeq[0].accel[0] += dashMult * pFact
       else:
         eSeq[0].accel[0] += 0.2 * dashMult * pFact
     else:
@@ -358,6 +361,10 @@ proc update(dt: float) =
       elif slide != 1:
         slide = 1
         eSeq[0].accel[0] -= dashMult * pFact
+        if eSeq[0].accel[0] > -1:
+          eSeq[0].accel[0] = -1
+        else:
+          eSeq[0].accel[0] -= dashMult * pFact
       else:
         eSeq[0].accel[0] -= 0.2 * dashMult * pFact
     else:
