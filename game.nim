@@ -250,6 +250,9 @@ proc updateAll(scrollTarget: int) =
       else: move(eDex, false)
  
 proc checkSlide(direction: string): bool =
+  if isKeyDown(C) and player(eSeq[0]).jumpBuffer > 0:
+    return false
+
   if collision(0, "down", false) == true:
     return false
 
@@ -269,7 +272,6 @@ proc checkSlide(direction: string): bool =
       if eSeq[0].vel[1] < 0: eSeq[0].vel[1] = 0
       if eSeq[0].accel[1] < 0: eSeq[0].accel[1] = 0
 
-    #player(eSeq[0]).dashBuffer = player(eSeq[0]).maxDashBuffer
     return true
 
 proc load() =
@@ -379,9 +381,6 @@ proc update(dt: float) =
       if player(eSeq[0]).jumpBuffer > 0:
         eSeq[0].accel[1] -= 1.5 * (player(eSeq[0]).jumpBuffer / player(eSeq[0]).maxJumpBuffer)
         player(eSeq[0]).jumpBuffer -= 1
-        if slide != 1:
-          player(eSeq[0]).jumpBuffer = 0
-          eSeq[0].accel[1] = 1
       else:
         player(eSeq[0]).dashBuffer = 0
         eSeq[0].accel[1] = gravity * slide
@@ -404,7 +403,6 @@ proc update(dt: float) =
  
   eSeq[0].maxVel[1] = storeMatching("maxVelY") * slide
 
-  #move(0, true)
   updateAll(0)
 
 proc draw() =
