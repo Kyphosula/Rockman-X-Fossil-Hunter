@@ -1,6 +1,6 @@
-Texture: blank
+Texture: lemon
 Variant: projectile
-Size: 64 64
-BoxCollision: 0 0 64 64
+Size: 16 8
+BoxCollision: 0 0 16 8
 MaxAccel: 50 0
 MaxVel: 50 0

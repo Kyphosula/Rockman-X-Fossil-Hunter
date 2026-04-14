@@ -20,7 +20,7 @@ var
   eSeq: seq[base]
   slide: float
   direction: string
-  scrollDirection: bool
+  scrollDirection, lockDash: bool
   dashMult: float
   displacement: int
 
@@ -177,15 +177,15 @@ proc move(id: int, scroll: bool) =
         accel = maxAccel * accelDirection
         eSeq[id].accel[i] = accel
 
-    eSeq[id].vel[i] += accel.trunc.toInt
-    var vel: int = eSeq[id].vel[i]
+    eSeq[id].vel[i] += accel
+    var vel: int = eSeq[id].vel[i].trunc.toInt
     if vel.abs != 0: 
       let velDirection: int = vel div vel.abs
-      var maxVel: int = eSeq[id].maxVel[i]
+      var maxVel: int = eSeq[id].maxVel[i].toInt
       if vel.abs > maxVel:
         eSeq[id].accel[i] = 0
         vel = maxVel * velDirection
-        eSeq[id].vel[i] = vel
+        eSeq[id].vel[i] = vel.toFloat
 
       if vel < 0:
         if i == 0:
@@ -223,7 +223,7 @@ proc updateAll(scrollTarget: int) =
   for id in 0 .. eSeq.len - 1:
     let eDex: int = id - displacement
 
-    if eSeq[eDex].vel[0] != 0 or slide != 1:
+    if eSeq[eDex].vel[0] != 0 or slide != 1 and eDex == 0:
       eSeq[eDex].textureName = directionalSprites(
         eSeq[eDex].textureName,
         eSeq[eDex].facing
@@ -239,7 +239,11 @@ proc updateAll(scrollTarget: int) =
           skip = true
 
     elif variant == "player":
-      player(eSeq[eDex]).isGrounded = collision(id, "down", false)
+      let groundStatus: bool = collision(id, "down", false)
+      if player(eSeq[eDex]).isGrounded != groundStatus:
+        if player(eSeq[eDex]).isGrounded == false:
+          player(eSeq[eDex]).dashBuffer = player(eSeq[eDex]).maxDashBuffer
+        player(eSeq[eDex]).isGrounded = groundStatus
 
     if skip == false:
       if id == scrollTarget: move(eDex, true)
@@ -265,31 +269,42 @@ proc checkSlide(direction: string): bool =
       if eSeq[0].vel[1] < 0: eSeq[0].vel[1] = 0
       if eSeq[0].accel[1] < 0: eSeq[0].accel[1] = 0
 
-    player(eSeq[0]).dashBuffer = player(eSeq[0]).maxDashBuffer
+    #player(eSeq[0]).dashBuffer = player(eSeq[0]).maxDashBuffer
     return true
 
 proc load() =
   eSeq.add(createEntity([0.0, 0.0], "entities/Rockman_X"))
-  storeAdd("maxVelX", eSeq[0].maxVel[0].toFloat)
-  storeAdd("maxVelY", eSeq[0].maxVel[1].toFloat)
+  storeAdd("maxVelX", eSeq[0].maxVel[0])
+  storeAdd("maxVelY", eSeq[0].maxVel[1])
   storeAdd("maxAccelX", eSeq[0].maxAccel[0])
   loadMap("test")
 
 proc update(dt: float) =
   if player(eSeq[0]).isGrounded == true or slide != 1:
-    if isKeyDown(V) and player(eSeq[0]).dashBuffer > 0:
-      dashMult = 2
-      eSeq[0].maxVel[0] = 2 * storeMatching("maxVelX").toInt
-      eSeq[0].maxAccel[0] = 2 * storeMatching("maxAccelX")
-      if slide == 1:
-        eSeq[0].accel[0] += storeMatching("maxAccelX") * eSeq[0].facing
-        player(eSeq[0]).dashBuffer -= 1
+    if isKeyPressed(V):
+      lockDash = false
+
+    if isKeyDown(V) and player(eSeq[0]).dashBuffer > 0 or isKeyDown(C) and isKeyDown(V):
+      if dashMult != 2:
+        dashMult = 2
+        eSeq[0].maxVel[0] = 2 * storeMatching("maxVelX")
+        eSeq[0].maxAccel[0] = 2 * storeMatching("maxAccelX")
+      if lockDash == false:
+        if slide == 1:
+          eSeq[0].accel[0] += storeMatching("maxAccelX") * eSeq[0].facing
+          player(eSeq[0]).dashBuffer -= 1
     else:
       if not isKeyDown(V):
         player(eSeq[0]).dashBuffer = player(eSeq[0]).maxDashBuffer
-      dashMult = 1
-      eSeq[0].maxVel[0] = storeMatching("maxVelX").toInt
-      eSeq[0].maxAccel[0] = storeMatching("maxAccelX")
+      if dashMult != 1:
+        dashMult = 1
+        eSeq[0].maxVel[0] = storeMatching("maxVelX")
+        eSeq[0].maxAccel[0] = storeMatching("maxAccelX")
+  else:
+    if isKeyDown(V):
+      lockDash = true
+    else:
+      lockDash = false
 
   if isKeyDown(RIGHT):
     if checkSlide("right") == false:
@@ -311,7 +326,7 @@ proc update(dt: float) =
     slide = 1
     if eSeq[0].vel[0] > 0:
       eSeq[0].accel[0] -= 5
-      if eSeq[0].vel[0] + eSeq[0].accel[0].trunc.toInt <= 0:
+      if eSeq[0].vel[0] + eSeq[0].accel[0] <= 0:
         eSeq[0].accel[0] = 0
         eSeq[0].vel[0] = 0
 
@@ -335,7 +350,7 @@ proc update(dt: float) =
     slide = 1
     if eSeq[0].vel[0] < 0:
       eSeq[0].accel[0] += 2
-      if eSeq[0].vel[0] + eSeq[0].accel[0].trunc.toInt >= 0:
+      if eSeq[0].vel[0] + eSeq[0].accel[0] >= 0:
         eSeq[0].accel[0] = 0
         eSeq[0].vel[0] = 0
 
@@ -364,7 +379,7 @@ proc update(dt: float) =
   if isKeyPressed(ESCAPE):
     quit()
  
-  eSeq[0].maxVel[1] = (storeMatching("maxVelY") * slide).toInt + 1
+  eSeq[0].maxVel[1] = storeMatching("maxVelY") * slide + 1
 
   #move(0, true)
   updateAll(0)

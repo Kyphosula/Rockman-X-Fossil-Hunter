@@ -7,8 +7,7 @@ type
     facing*: float
     colX1*, colY1*: float
     colX2*, colY2*: float
-    vel*, maxVel*: array[2, int]
-    accel*, maxAccel*, size*, pos*: array[2, float]
+    vel*, maxVel*, accel*, maxAccel*, size*, pos*: array[2, float]
   
   player* = ref object of base
     isGrounded*: bool
@@ -91,8 +90,8 @@ proc createEntity*(pos: array[2, float], target: string): base =
     newEntity.colY2 = col[3].parseFloat
     newEntity.maxAccel[0] = accel[0].parseFloat
     newEntity.maxAccel[1] = accel[1].parseFloat
-    newEntity.maxVel[0] = vel[0].parseInt
-    newEntity.maxVel[1] = vel[1].parseInt
+    newEntity.maxVel[0] = vel[0].parseFloat
+    newEntity.maxVel[1] = vel[1].parseFloat
     newEntity.pos = pos
 
     return newEntity
