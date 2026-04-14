@@ -61,7 +61,7 @@ proc loadMap(name: string) =
     let tileMatch: seq[string] = loadTextures[i].split('|')
     for j in 0 .. walkTextures.len - 1:
       if walkTextures[j][1].split('.')[0] == tileMatch[1]:
-        textures[i] = newTexture("textures/" & walkTextures[j][1])
+        textures[i] = newTexture("textures/" & walkTextures[j][1], Nearest)
         textureList.add(tileMatch)
         break
 
