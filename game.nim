@@ -23,6 +23,7 @@ var
   dashMult, k: float
   displacement, z: int
   screenHeight, screenWidth: int
+  rockmanX: SpriteBatch
 
 let walkTextures: seq[tuple[kind: PathComponent, path: string]] = 
   toSeq(walkDir("textures", relative = true))
@@ -245,7 +246,8 @@ proc updateAll(scrollTarget: int, fire: bool) =
           eSeq[eDex].facing,
           eSeq[eDex].vel[0],
           groundStatus,
-          fire
+          fire,
+          slide
         )
 
     if skip == false:

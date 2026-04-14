@@ -4,7 +4,7 @@ type
   base* = ref object of RootObj
     variant*: string
     textureName*: string
-    facing*: float
+    facing*: float = 1
     colX1*, colY1*: float
     colX2*, colY2*: float
     vel*, maxVel*, accel*, maxAccel*, size*, pos*: array[2, float]
@@ -38,7 +38,11 @@ proc storeAdd*(name: string, value: float) =
 proc getWC*(): int =
   return wCount + 1
 
-proc directionalSprites*(name: string, facing: float, vel: float, ground, fire: bool): string =
+proc directionalSprites*(
+  name: string, facing: float, vel: float,
+  ground, fire: bool, slide: float
+): string =
+
   gCount += 1
   fCount -= 1
   if gCount == 10:
@@ -57,6 +61,10 @@ proc directionalSprites*(name: string, facing: float, vel: float, ground, fire: 
 
   case facing
   of -1:
+    if slide != 1:
+      if fileExists(&"textures/{name}_LEFT_SLIDE{f}.png"):
+        return &"{name}_LEFT_SLIDE{f}"
+
     if ground == false:
       if fileExists(&"textures/{name}_LEFT_AIR{f}.png"):
         return &"{name}_LEFT_AIR{f}"
@@ -69,6 +77,10 @@ proc directionalSprites*(name: string, facing: float, vel: float, ground, fire: 
     if fileExists(&"textures/{name}_LEFT{f}.png"):
       return &"{name}_LEFT{f}"
   of 1:
+    if slide != 1:
+      if fileExists(&"textures/{name}_RIGHT_SLIDE{f}.png"):
+        return &"{name}_RIGHT_SLIDE{f}"
+
     if ground == false:
       if fileExists(&"textures/{name}_RIGHT_AIR{f}.png"):
         return &"{name}_RIGHT_AIR{f}"

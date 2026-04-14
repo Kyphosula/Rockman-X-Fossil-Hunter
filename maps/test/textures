@@ -1,12 +1,15 @@
 #|blank
-A|black
- |black
-x|RockmanX
+A|blank
+ |sky
 x|RockmanX_LEFT
+x|RockmanX_LEFT_SLIDE
+x|RockmanX_LEFT_SLIDE_FIRE
 x|RockmanX_LEFT_AIR
 x|RockmanX_LEFT_WALK_1
 x|RockmanX_LEFT_WALK_2
 x|RockmanX_RIGHT
+x|RockmanX_RIGHT_SLIDE
+x|RockmanX_RIGHT_SLIDE_FIRE
 x|RockmanX_RIGHT_AIR
 x|RockmanX_RIGHT_WALK_1
 x|RockmanX_RIGHT_WALK_2
