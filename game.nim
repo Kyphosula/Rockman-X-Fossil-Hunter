@@ -2,10 +2,9 @@ import std/[os, sequtils, strutils, strformat, math]
 import kirpi, entities
 
 const
-  screenWidth: int = 1920
-  screenHeight: int = 1080
-  bits: int = 64
-  gravity: float = 1.5
+  bits: int = 16
+  pFact: float = bits.toFloat / 64
+  gravity: float = 1.5 * pFact
 
 var 
   textures: seq[Texture]
@@ -23,6 +22,7 @@ var
   scrollDirection, lockDash: bool
   dashMult: float
   displacement: int
+  screenHeight, screenWidth: int
 
 let walkTextures: seq[tuple[kind: PathComponent, path: string]] = 
   toSeq(walkDir("textures", relative = true))
@@ -50,11 +50,11 @@ proc loadMap(name: string) =
   
   eSeq[0].pos[0] = startPosition[0].parseFloat * bits.toFloat
   eSeq[0].pos[1] = startHeight + startPosition[1].parseFloat * bits.toFloat
-  scrollSet[1] = screenHeight div 2
+  scrollSet[1] = screenHeight / 2
   if startHeight == 0: 
     scrollSet[1] = eSeq[0].pos[1] + eSeq[0].size[1]
 
-  scrollSet[0] = screenWidth div 2
+  scrollSet[0] = screenWidth / 2
   textures.setLen(loadTextures.len - 1)
 
   for i in 0 .. loadTextures.len - 2:
@@ -256,16 +256,16 @@ proc checkSlide(direction: string): bool =
   if collision(0, direction, true) == true:
     if player(eSeq[0]).isGrounded == false:
       player(eSeq[0]).isGrounded = true
-      slide = 0.05
+      slide = 0.3
       if isKeyPressed(C):
         slide = 1
         player(eSeq[0]).isGrounded = false
         player(eSeq[0]).jumpBuffer -= 1
         case direction
         of "right":
-          eSeq[0].accel[0] -= 1.5 * dashMult
+          eSeq[0].accel[0] -= 1
         of "left":
-          eSeq[0].accel[0] += 1.5 * dashMult
+          eSeq[0].accel[0] += 1
       if eSeq[0].vel[1] < 0: eSeq[0].vel[1] = 0
       if eSeq[0].accel[1] < 0: eSeq[0].accel[1] = 0
 
@@ -273,7 +273,21 @@ proc checkSlide(direction: string): bool =
     return true
 
 proc load() =
-  eSeq.add(createEntity([0.0, 0.0], "entities/Rockman_X"))
+  setFullScreenMode(true)
+
+  let
+    w: float = getWidth()
+    h: float =  getHeight()
+    sx: float = w / 480
+    sy: float = h / 270
+
+  screenWidth = (w / sx).toInt
+  screenHeight = (h / sy).toInt
+
+  setFullScreenMode(false)
+
+  scale(sx,sy)
+  eSeq.add(createEntity([0.0, 0.0], "entities/Rockman_X", pFact))
   storeAdd("maxVelX", eSeq[0].maxVel[0])
   storeAdd("maxVelY", eSeq[0].maxVel[1])
   storeAdd("maxAccelX", eSeq[0].maxAccel[0])
@@ -284,11 +298,11 @@ proc update(dt: float) =
     if isKeyPressed(V):
       lockDash = false
 
-    if isKeyDown(V) and player(eSeq[0]).dashBuffer > 0 or isKeyDown(C) and isKeyDown(V):
-      if dashMult != 2:
-        dashMult = 2
-        eSeq[0].maxVel[0] = 2 * storeMatching("maxVelX")
-        eSeq[0].maxAccel[0] = 2 * storeMatching("maxAccelX")
+    if isKeyDown(V) and player(eSeq[0]).dashBuffer > 0 and lockDash == false or isKeyDown(C) and isKeyDown(V):
+      if dashMult != 1.5:
+        dashMult = 1.5
+        eSeq[0].maxVel[0] = 1.5 * storeMatching("maxVelX")
+        eSeq[0].maxAccel[0] = 1.5 * storeMatching("maxAccelX")
       if lockDash == false:
         if slide == 1:
           eSeq[0].accel[0] += storeMatching("maxAccelX") * eSeq[0].facing
@@ -313,19 +327,22 @@ proc update(dt: float) =
         slide = 1 
         if eSeq[0].vel[1] < 0: eSeq[0].vel[1] = 0
         if eSeq[0].accel[1] < 0: eSeq[0].accel[1] = 0 
-        eSeq[0].accel[0] += 2 * dashMult
+        eSeq[0].accel[0] += 2 * dashMult * pFact
       elif slide != 1:
         slide = 1
-        eSeq[0].accel[0] += dashMult
+        eSeq[0].accel[0] += dashMult * pFact
       else:
-        eSeq[0].accel[0] += 0.3 * dashMult
+        eSeq[0].accel[0] += 0.2 * dashMult * pFact
     else:
       eSeq[0].facing = -1
 
   elif not isKeyDown(LEFT):
     slide = 1
     if eSeq[0].vel[0] > 0:
-      eSeq[0].accel[0] -= 5
+      if player(eSeq[0]).isGrounded == true:
+        eSeq[0].accel[0] -= pFact
+      else:
+        eSeq[0].accel[0] -= pFact / (5 * dashMult)
       if eSeq[0].vel[0] + eSeq[0].accel[0] <= 0:
         eSeq[0].accel[0] = 0
         eSeq[0].vel[0] = 0
@@ -337,19 +354,22 @@ proc update(dt: float) =
         slide = 1
         if eSeq[0].vel[1] > 0: eSeq[0].vel[1] = 0
         if eSeq[0].accel[1] > 0: eSeq[0].accel[1] = 0
-        eSeq[0].accel[0] -= 2 * dashMult
+        eSeq[0].accel[0] -= 2 * dashMult * pFact
       elif slide != 1:
         slide = 1
-        eSeq[0].accel[0] -= 1 * dashMult
+        eSeq[0].accel[0] -= dashMult * pFact
       else:
-        eSeq[0].accel[0] -= 0.3 * dashMult
+        eSeq[0].accel[0] -= 0.2 * dashMult * pFact
     else:
       eSeq[0].facing = 1
 
   elif not isKeyDown(RIGHT):
     slide = 1
     if eSeq[0].vel[0] < 0:
-      eSeq[0].accel[0] += 2
+      if player(eSeq[0]).isGrounded == true:
+        eSeq[0].accel[0] += pFact
+      else:
+        eSeq[0].accel[0] += pFact / (5 * dashMult)
       if eSeq[0].vel[0] + eSeq[0].accel[0] >= 0:
         eSeq[0].accel[0] = 0
         eSeq[0].vel[0] = 0
@@ -357,29 +377,32 @@ proc update(dt: float) =
   if isKeyDown(C):
     if player(eSeq[0]).isGrounded == true or player(eSeq[0]).jumpBuffer < player(eSeq[0]).maxJumpBuffer:
       if player(eSeq[0]).jumpBuffer > 0:
-        eSeq[0].accel[1] -= 20
+        eSeq[0].accel[1] -= 1.5 * (player(eSeq[0]).jumpBuffer / player(eSeq[0]).maxJumpBuffer)
         player(eSeq[0]).jumpBuffer -= 1
+        if slide != 1:
+          player(eSeq[0]).jumpBuffer = 0
+          eSeq[0].accel[1] = 1
       else:
         player(eSeq[0]).dashBuffer = 0
-        eSeq[0].accel[1] = gravity * slide + 1
+        eSeq[0].accel[1] = gravity * slide
   else:
     if player(eSeq[0]).isGrounded == true:
       player(eSeq[0]).jumpBuffer = player(eSeq[0]).maxJumpBuffer
     else:
       player(eSeq[0]).dashBuffer = 0
       player(eSeq[0]).jumpBuffer = 0
-    eSeq[0].accel[1] = gravity * slide + 1
+    eSeq[0].accel[1] = gravity * slide
 
   if isKeyPressed(X):
     var px: float = eSeq[0].pos[0] + bits.toFloat * eSeq[0].facing
     let py: float = eSeq[0].pos[1] + bits / 2
-    eSeq.add(createEntity([px, py], "projectiles/lemonShot"))
+    eSeq.add(createEntity([px, py], "projectiles/lemonShot", pFact))
     eSeq[^1].accel[0] = eSeq[0].facing
 
   if isKeyPressed(ESCAPE):
     quit()
  
-  eSeq[0].maxVel[1] = storeMatching("maxVelY") * slide + 1
+  eSeq[0].maxVel[1] = storeMatching("maxVelY") * slide
 
   #move(0, true)
   updateAll(0)
@@ -392,6 +415,6 @@ proc draw() =
 proc config(appSettings:var AppSettings) =
   appSettings.window.width = screenWidth
   appSettings.window.height = screenHeight
-  appSettings.window.fullscreen = true
+  appSettings.window.borderless = true
 
 run("Rockman X Fossil Hunter",load,update,draw,config)

@@ -52,7 +52,7 @@ proc directionalSprites*(name: string, facing: float): string =
 
   return name
 
-proc createEntity*(pos: array[2, float], target: string): base =
+proc createEntity*(pos: array[2, float], target: string, pf: float): base =
   let target: string = target
 
   if fileExists(target):
@@ -88,10 +88,10 @@ proc createEntity*(pos: array[2, float], target: string): base =
     newEntity.colY1 = col[1].parseFloat
     newEntity.colX2 = col[2].parseFloat
     newEntity.colY2 = col[3].parseFloat
-    newEntity.maxAccel[0] = accel[0].parseFloat
-    newEntity.maxAccel[1] = accel[1].parseFloat
-    newEntity.maxVel[0] = vel[0].parseFloat
-    newEntity.maxVel[1] = vel[1].parseFloat
+    newEntity.maxAccel[0] = accel[0].parseFloat * pf
+    newEntity.maxAccel[1] = accel[1].parseFloat * pf
+    newEntity.maxVel[0] = vel[0].parseFloat * pf
+    newEntity.maxVel[1] = vel[1].parseFloat * pf
     newEntity.pos = pos
 
     return newEntity
