@@ -96,6 +96,10 @@ proc directionalSprites*(
     return name
 
 proc updateCollision*(target: string): array[4, float] =
+  var target: string = target
+  if target.contains("_FIRE"):
+    target = target[0 .. ^6]
+
   if fileExists(&"collision/{target}"):
     let data: seq[string] = readFile(&"collision/{target}")[0 .. ^2].split(',')
     var newValues: array[4, float]
