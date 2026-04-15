@@ -42,17 +42,27 @@ proc storeAdd*(name: string, value: float) =
 proc getWC*(): int =
   return wCount + 1
 
+proc updateFire*(): bool =
+  if fCount > 0:
+    fCount -= 1
+  else: return true
+
+proc updateWalk*(): bool =
+  gCount += 1
+  if gCount == 10:
+    gCount = 0
+    wCount += 1
+    return true
+
+proc resetWalk*() =
+  gCount = 0
+  wCount = 0
+
 proc directionalSprites*(
   name: string, facing: float, vel: float,
   ground, fire: bool, slide: float
 ): string =
 
-  gCount += 1
-  fCount -= 1
-  if gCount == 10:
-    gCount = 0
-    wCount += 1
- 
   var name: string = name.split("_")[0]
   var f: string
   if fire == true:

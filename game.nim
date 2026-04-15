@@ -5,6 +5,7 @@ const
   bits: int = 16
   pFact: float = bits.toFloat / 64
   gravity: float = 1.5 * pFact
+  directions: array[4, string] = ["up", "down", "left", "right"]
 
 var 
   textures: seq[Texture]
@@ -17,9 +18,9 @@ var
   scrollSet: array[2, float]
   upperX, upperY: int
   eSeq: seq[base]
-  slide: float
+  slide, oldSlide, oldFacing: float
   direction: string
-  scrollDirection, lockDash: bool
+  scrollDirection, lockDash, moved, fire: bool
   dashMult, k: float
   displacement, z: int
   screenHeight, screenWidth: int
@@ -125,47 +126,65 @@ proc collision(id: int, direction: string, hit: bool, ovr: array[4, int]): bool 
     posY: float = eSeq[id].pos[1] - startHeight
     lowerYBound: int = (posY + eSeq[id].colY1).toInt + ovr[0]
     upperYBound: int = (posY + eSeq[id].colY2).toInt - 1 + ovr[1]
-    lowerXBound: int = (posX + eSeq[id].colX1).toInt + ovr[2]
-    upperXBound: int = (posX + eSeq[id].colX2).toInt - 1 + ovr[3]
+
+  var lowerXBound: int = (posX + eSeq[id].colX1).toInt + ovr[2]
+  var upperXBound: int = (posX + eSeq[id].colX2).toInt - 1 + ovr[3]
 
   case direction
   of "right":
     for i in lowerYBound .. upperYBound:
       if checkTile((posX + eSeq[id].colX2).toInt, i) != ' ':
-        if hit == true:
+        if hit:
           eSeq[id].vel[0] = 0
           if eSeq[id].accel[0] > 0:
             eSeq[id].accel[0] = 0
+        eSeq[id].activeCollision.right = true
         return true
     eSeq[id].activeCollision.right = false
 
   of "left":
     for i in lowerYBound .. upperYBound:
       if checkTile((posX + eSeq[id].colX1).toInt - 1, i) != ' ':
-        if hit == true:
+        if hit:
           eSeq[id].vel[0] = 0
           if eSeq[id].accel[0] < 0:
             eSeq[id].accel[0] = 0
+        eSeq[id].activeCollision.left = true
         return true
     eSeq[id].activeCollision.left = false
 
   of "down":
+    var phantom: bool
+    if id == 0 and hit and slide == 1:
+      lowerXBound -= 1
+      upperXBound += 1
+      phantom = true
+
     for i in lowerXBound .. upperXBound:
+      var skip: bool
       if checkTile(i, (posY + eSeq[id].colY2).toInt) != ' ':
-        if hit == true:
-          eSeq[id].vel[1] = 0
-          if eSeq[id].accel[1] > 0:
-            eSeq[id].accel[1] = 0
-        return true
+        if phantom == true:
+          if i - lowerXBound < 1 or i >= upperXBound - 1:
+            if checkTile(i, (posY + eSeq[id].colY2).toInt - 1) != ' ':
+              skip = true
+        
+        if skip == false:
+          if hit:
+            eSeq[id].vel[1] = 0
+            if eSeq[id].accel[1] > 0:
+              eSeq[id].accel[1] = 0
+          eSeq[id].activeCollision.down = true
+          return true
     eSeq[id].activeCollision.down = false
 
   of "up":
     for i in lowerXBound .. upperXBound:
       if checkTile(i, (posY + eSeq[id].colY1).toInt - 1) != ' ':
-        if hit == true:
+        if hit:
           eSeq[id].vel[1] = 0
           if eSeq[id].accel[1] < 0:
             eSeq[id].accel[1] = 0
+        eSeq[id].activeCollision.up = true
         return true
     eSeq[id].activeCollision.up = false
 
@@ -181,7 +200,8 @@ proc move(id: int, scroll: bool) =
 
     eSeq[id].vel[i] += accel
     var vel: int = eSeq[id].vel[i].trunc.toInt
-    if vel.abs != 0: 
+    var checkedCollision: array[4, int]
+    if vel.abs != 0:
       let velDirection: int = vel div vel.abs
       var maxVel: int = eSeq[id].maxVel[i].toInt
       if vel.abs > maxVel:
@@ -193,7 +213,10 @@ proc move(id: int, scroll: bool) =
         if i == 0:
           eSeq[id].facing = -1
           direction = "left"
-        else: direction = "up"
+          checkedCollision[3] = 1
+        else: 
+          direction = "up"
+          checkedCollision[0] = 1
         k = -1
         z = 0
 
@@ -201,7 +224,10 @@ proc move(id: int, scroll: bool) =
         if i == 0:
           eSeq[id].facing = 1
           direction = "right"
-        else: direction = "down"
+          checkedCollision[1] = 1
+        else: 
+          direction = "down"
+          checkedCollision[2] = 1
         k = 1
         z = 1
         
@@ -219,16 +245,16 @@ proc move(id: int, scroll: bool) =
                 if eSeq[id].pos[i] + (eSeq[id].size[i] / 2) - scrollPos[i] >= scrollSet[i]:
                   scrollPos[i] += 1            
           eSeq[id].pos[i] += k
-        elif i == 0:
-          if direction == "left": eSeq[id].activeCollision.left = true
-          if direction == "right": eSeq[id].activeCollision.right = true
-          break
-        else: 
-          if direction == "up": eSeq[id].activeCollision.up = true
-          if direction == "down": eSeq[id].activeCollision.down = true
-          break
+          moved = true
+        else: break
 
-proc updateAll(scrollTarget: int, fire: bool) =
+    if moved:
+      moved = false
+      for i in 0 .. 3:
+        if checkedCollision[i] == 0:
+          discard collision(id, directions[i], false, [0,0,0,0])
+
+proc updateAll(scrollTarget: int) =
   displacement = 0
   for id in 0 .. eSeq.len - 1:
     let eDex: int = id - displacement
@@ -256,15 +282,21 @@ proc updateAll(scrollTarget: int, fire: bool) =
           player(eSeq[eDex]).dashBuffer = player(eSeq[eDex]).maxDashBuffer
         player(eSeq[eDex]).isGrounded = groundStatus
 
-      var checkFire, checkLeft, checkRight: bool
-      if eDex == 0: checkFire = fire
-      if eSeq[eDex].facing == 1 and eSeq[eDex].activeCollision.right == false: checkRight = true
-      elif air or checkFire: checkRight = true
-      if eSeq[eDex].facing == -1 and eSeq[eDex].activeCollision.left == false: checkLeft = true
-      elif air or checkFire: checkLeft = true
+      var checkFire, checkLeft, checkRight, force: bool
+      force = updateFire()
+      if eSeq[eDex].vel[0] != 0 and groundStatus: force = updateWalk()
+      else: resetWalk()
 
-      if checkRight or checkLeft:
-        if eSeq[eDex].vel[0] != 0 or eSeq[eDex].textureName.split("_").len > 2 or air or checkFire:
+      if eDex == 0 and force == false:
+        checkFire = fire
+        if eSeq[0].facing != oldFacing: force = true
+        if slide != oldSlide: force = true
+
+      if eSeq[eDex].facing == 1 and eSeq[eDex].activeCollision.right == false: checkRight = true
+      if eSeq[eDex].facing == -1 and eSeq[eDex].activeCollision.left == false: checkLeft = true
+
+      if checkRight or checkLeft or eSeq[eDex].vel[0] == 0:
+        if force or air or checkFire:
           let newName: string = directionalSprites(
             eSeq[eDex].textureName,
             eSeq[eDex].facing,
@@ -283,7 +315,7 @@ proc updateAll(scrollTarget: int, fire: bool) =
             eSeq[eDex].colY2 = newBox[3]
  
 proc checkSlide(direction: string): bool =
-  if collision(0, "down", false, [0,0,0,0]) == true:
+  if eSeq[0].activeCollision.down == true:
     return false
 
   if isKeyDown(C) and player(eSeq[0]).jumpBuffer != player(eSeq[0]).maxJumpBuffer:
@@ -298,10 +330,8 @@ proc checkSlide(direction: string): bool =
         player(eSeq[0]).isGrounded = false
         player(eSeq[0]).jumpBuffer -= 1
         case direction
-        of "right":
-          eSeq[0].accel[0] -= 1
-        of "left":
-          eSeq[0].accel[0] += 1
+        of "right": eSeq[0].accel[0] -= 1
+        of "left": eSeq[0].accel[0] += 1
       if eSeq[0].vel[1] < 0: eSeq[0].vel[1] = 0
       if eSeq[0].accel[1] < 0: eSeq[0].accel[1] = 0
 
@@ -329,6 +359,9 @@ proc load() =
   loadMap("test")
 
 proc update(dt: float) =
+  oldSlide = slide
+  oldFacing = eSeq[0].facing
+
   if player(eSeq[0]).isGrounded == true or slide != 1:
     if isKeyPressed(V):
       lockDash = false
@@ -350,10 +383,8 @@ proc update(dt: float) =
         eSeq[0].maxVel[0] = storeMatching("maxVelX")
         eSeq[0].maxAccel[0] = storeMatching("maxAccelX")
   else:
-    if isKeyDown(V):
-      lockDash = true
-    else:
-      lockDash = false
+    if isKeyDown(V): lockDash = true
+    else: lockDash = false
 
   if isKeyDown(RIGHT):
     if checkSlide("right") == false:
@@ -365,22 +396,16 @@ proc update(dt: float) =
         eSeq[0].accel[0] += 2 * dashMult * pFact
       elif slide != 1:
         slide = 1
-        if eSeq[0].accel[0] < 1:
-          eSeq[0].accel[0] = 1
-        else:
-          eSeq[0].accel[0] += dashMult * pFact
-      else:
-        eSeq[0].accel[0] += 0.2 * dashMult * pFact
-    else:
-      eSeq[0].facing = -1
+        if eSeq[0].accel[0] < 1: eSeq[0].accel[0] = 1
+        else: eSeq[0].accel[0] += dashMult * pFact
+      else: eSeq[0].accel[0] += 0.2 * dashMult * pFact
+    else: eSeq[0].facing = -1
 
   elif not isKeyDown(LEFT):
     slide = 1
     if eSeq[0].vel[0] > 0:
-      if player(eSeq[0]).isGrounded == true:
-        eSeq[0].accel[0] -= pFact
-      else:
-        eSeq[0].accel[0] -= pFact / (2 * dashMult)
+      if player(eSeq[0]).isGrounded == true: eSeq[0].accel[0] -= pFact
+      else: eSeq[0].accel[0] -= pFact / (2 * dashMult)
       if eSeq[0].vel[0] + eSeq[0].accel[0] <= 0:
         eSeq[0].accel[0] = 0
         eSeq[0].vel[0] = 0
@@ -395,23 +420,16 @@ proc update(dt: float) =
         eSeq[0].accel[0] -= 2 * dashMult * pFact
       elif slide != 1:
         slide = 1
-        eSeq[0].accel[0] -= dashMult * pFact
-        if eSeq[0].accel[0] > -1:
-          eSeq[0].accel[0] = -1
-        else:
-          eSeq[0].accel[0] -= dashMult * pFact
-      else:
-        eSeq[0].accel[0] -= 0.2 * dashMult * pFact
-    else:
-      eSeq[0].facing = 1
+        if eSeq[0].accel[0] > -1: eSeq[0].accel[0] = -1
+        else: eSeq[0].accel[0] -= dashMult * pFact
+      else: eSeq[0].accel[0] -= 0.2 * dashMult * pFact
+    else: eSeq[0].facing = 1
 
   elif not isKeyDown(RIGHT):
     slide = 1
     if eSeq[0].vel[0] < 0:
-      if player(eSeq[0]).isGrounded == true:
-        eSeq[0].accel[0] += pFact
-      else:
-        eSeq[0].accel[0] += pFact / (2 * dashMult)
+      if player(eSeq[0]).isGrounded == true: eSeq[0].accel[0] += pFact
+      else: eSeq[0].accel[0] += pFact / (2 * dashMult)
       if eSeq[0].vel[0] + eSeq[0].accel[0] >= 0:
         eSeq[0].accel[0] = 0
         eSeq[0].vel[0] = 0
@@ -432,7 +450,6 @@ proc update(dt: float) =
       player(eSeq[0]).jumpBuffer = 0
     eSeq[0].accel[1] = gravity * slide
 
-  var fire: bool
   if isKeyPressed(X):
     fire = true
     var px: float = eSeq[0].pos[0]
@@ -443,13 +460,15 @@ proc update(dt: float) =
     let py: float = eSeq[0].pos[1] + bits / 2 + 16
     eSeq.add(createEntity([px, py], "projectiles/lemonShot", pFact))
     eSeq[^1].accel[0] = eSeq[0].facing
+  else:
+    fire = false
 
   if isKeyPressed(ESCAPE):
     quit()
  
   eSeq[0].maxVel[1] = storeMatching("maxVelY") * slide
 
-  updateAll(0, fire)
+  updateAll(0)
 
 proc draw() =
   clear(Black)
