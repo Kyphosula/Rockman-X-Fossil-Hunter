@@ -1,6 +1,9 @@
 import os, strutils, strformat
 
 type
+  collisionData = object
+    up*, right*, down*, left*: bool
+
   base* = ref object of RootObj
     variant*: string
     textureName*: string
@@ -8,6 +11,7 @@ type
     colX1*, colY1*: float
     colX2*, colY2*: float
     vel*, maxVel*, accel*, maxAccel*, size*, pos*: array[2, float]
+    activeCollision*: collisionData
   
   player* = ref object of base
     isGrounded*: bool

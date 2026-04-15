@@ -137,6 +137,7 @@ proc collision(id: int, direction: string, hit: bool, ovr: array[4, int]): bool 
           if eSeq[id].accel[0] > 0:
             eSeq[id].accel[0] = 0
         return true
+    eSeq[id].activeCollision.right = false
 
   of "left":
     for i in lowerYBound .. upperYBound:
@@ -146,6 +147,7 @@ proc collision(id: int, direction: string, hit: bool, ovr: array[4, int]): bool 
           if eSeq[id].accel[0] < 0:
             eSeq[id].accel[0] = 0
         return true
+    eSeq[id].activeCollision.left = false
 
   of "down":
     for i in lowerXBound .. upperXBound:
@@ -155,6 +157,7 @@ proc collision(id: int, direction: string, hit: bool, ovr: array[4, int]): bool 
           if eSeq[id].accel[1] > 0:
             eSeq[id].accel[1] = 0
         return true
+    eSeq[id].activeCollision.down = false
 
   of "up":
     for i in lowerXBound .. upperXBound:
@@ -164,6 +167,7 @@ proc collision(id: int, direction: string, hit: bool, ovr: array[4, int]): bool 
           if eSeq[id].accel[1] < 0:
             eSeq[id].accel[1] = 0
         return true
+    eSeq[id].activeCollision.up = false
 
 proc move(id: int, scroll: bool) =
   for i in 0 .. 1:
@@ -215,6 +219,14 @@ proc move(id: int, scroll: bool) =
                 if eSeq[id].pos[i] + (eSeq[id].size[i] / 2) - scrollPos[i] >= scrollSet[i]:
                   scrollPos[i] += 1            
           eSeq[id].pos[i] += k
+        elif i == 0:
+          if direction == "left": eSeq[id].activeCollision.left = true
+          if direction == "right": eSeq[id].activeCollision.right = true
+          break
+        else: 
+          if direction == "up": eSeq[id].activeCollision.up = true
+          if direction == "down": eSeq[id].activeCollision.down = true
+          break
 
 proc updateAll(scrollTarget: int, fire: bool) =
   displacement = 0
@@ -230,8 +242,13 @@ proc updateAll(scrollTarget: int, fire: bool) =
           displacement += 1
           skip = true
 
-    elif variant == "player":
-      let groundStatus: bool = collision(eDex, "down", false, [0,0,0,0])
+    if skip == false:
+      var scrollScreen: bool
+      if id == scrollTarget: scrollScreen = true
+      move(eDex, scrollScreen)
+
+    if variant == "player":
+      let groundStatus: bool = eSeq[eDex].activeCollision.down
       var air: bool
       if player(eSeq[eDex]).isGrounded != groundStatus:
         air = true
@@ -239,9 +256,15 @@ proc updateAll(scrollTarget: int, fire: bool) =
           player(eSeq[eDex]).dashBuffer = player(eSeq[eDex]).maxDashBuffer
         player(eSeq[eDex]).isGrounded = groundStatus
 
-      if eSeq[eDex].facing == 1 and collision(eDex, "right", false, [0,0,0,0]) == false or eSeq[eDex].facing == -1 and collision(eDex, "left", false, [0,0,0,0]) == false or fire == true:
+      var checkFire, checkLeft, checkRight: bool
+      if eDex == 0: checkFire = fire
+      if eSeq[eDex].facing == 1 and eSeq[eDex].activeCollision.right == false: checkRight = true
+      elif air or checkFire: checkRight = true
+      if eSeq[eDex].facing == -1 and eSeq[eDex].activeCollision.left == false: checkLeft = true
+      elif air or checkFire: checkLeft = true
 
-        if eSeq[eDex].vel[0] != 0 or eSeq[eDex].textureName.split("_").len > 2 or air == true or fire == true:
+      if checkRight or checkLeft:
+        if eSeq[eDex].vel[0] != 0 or eSeq[eDex].textureName.split("_").len > 2 or air or checkFire:
           let newName: string = directionalSprites(
             eSeq[eDex].textureName,
             eSeq[eDex].facing,
@@ -258,10 +281,6 @@ proc updateAll(scrollTarget: int, fire: bool) =
             eSeq[eDex].colY1 = newBox[1]
             eSeq[eDex].colX2 = newBox[2]
             eSeq[eDex].colY2 = newBox[3]
-
-    if skip == false:
-      if id == scrollTarget: move(eDex, true)
-      else: move(eDex, false)
  
 proc checkSlide(direction: string): bool =
   if collision(0, "down", false, [0,0,0,0]) == true:
