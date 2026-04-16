@@ -1,5 +1,5 @@
 import std/[os, sequtils, strutils, strformat, math]
-import kirpi, entities
+import kirpi, entities, npcLogic
 
 const
   bits: int = 16
@@ -256,6 +256,13 @@ proc move(id: int, scroll: bool) =
         if checkedCollision[i] == 0:
           discard collision(id, directions[i], false, [0,0,0,0])
 
+proc setCollision(id: int, name: string) =
+  let newBox: array[4, float] = updateCollision(name)
+  eSeq[id].colX1 = newBox[0]
+  eSeq[id].colY1 = newBox[1]
+  eSeq[id].colX2 = newBox[2]
+  eSeq[id].colY2 = newBox[3]
+
 proc updateAll(scrollTarget: int) =
   displacement = 0
   for id in 0 .. eSeq.len - 1:
@@ -281,6 +288,16 @@ proc updateAll(scrollTarget: int) =
       var scrollScreen: bool
       if id == scrollTarget: scrollScreen = true
       move(eDex, scrollScreen)
+
+    if variant == "npc":
+      let updateData: updateNpc = calcNpc(eSeq[edex])
+      if updateData.updateNeeded:
+        if eSeq[eDex].textureName != updateData.textureName:
+          eSeq[eDex].textureName = updateData.textureName
+          setCollision(eDex, updateData.textureName)
+        
+        if updateData.addEntities.len > 0:
+          eSeq.add(updateData.addEntities)
 
     if variant == "player":
       let groundStatus: bool = eSeq[eDex].activeCollision.down
@@ -317,11 +334,8 @@ proc updateAll(scrollTarget: int) =
 
           if eSeq[eDex].textureName != newName:
             eSeq[eDex].textureName = newName
-            let newBox: array[4, float] = updateCollision(newName)
-            eSeq[eDex].colX1 = newBox[0]
-            eSeq[eDex].colY1 = newBox[1]
-            eSeq[eDex].colX2 = newBox[2]
-            eSeq[eDex].colY2 = newBox[3]
+            setCollision(eDex, newName)
+
  
 proc checkSlide(direction: string): bool =
   if eSeq[0].activeCollision.down == true:
