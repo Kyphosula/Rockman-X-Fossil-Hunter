@@ -1,3 +1,14 @@
+#[
+Rockman-X-Fossil-Hunter
+Copyright (C) 2026 Kyphosula
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+]#
+
 import os, strutils, strformat
 
 type
@@ -72,37 +83,37 @@ proc directionalSprites*(
   case facing
   of -1:
     if slide != 1:
-      if fileExists(&"textures/{name}_LEFT_SLIDE{f}.png"):
+      if fileExists(&"../data/textures/{name}_LEFT_SLIDE{f}.png"):
         return &"{name}_LEFT_SLIDE{f}"
 
     if ground == false:
-      if fileExists(&"textures/{name}_LEFT_AIR{f}.png"):
+      if fileExists(&"../data/textures/{name}_LEFT_AIR{f}.png"):
         return &"{name}_LEFT_AIR{f}"
 
     elif vel <= -1:
-      if fileExists(&"textures/{name}_LEFT_WALK_{wCount}{f}.png"):
+      if fileExists(&"../data/textures/{name}_LEFT_WALK_{wCount}{f}.png"):
         return &"{name}_LEFT_WALK_{wCount}{f}"
       else: wCount = 0
 
-    if fileExists(&"textures/{name}_LEFT{f}.png"):
+    if fileExists(&"../data/textures/{name}_LEFT{f}.png"):
       return &"{name}_LEFT{f}"
 
   of 1:
     if slide != 1:
-      if fileExists(&"textures/{name}_RIGHT_SLIDE{f}.png"):
+      if fileExists(&"../data/textures/{name}_RIGHT_SLIDE{f}.png"):
         return &"{name}_RIGHT_SLIDE{f}"
 
     if ground == false:
-      if fileExists(&"textures/{name}_RIGHT_AIR{f}.png"):
+      if fileExists(&"../data/textures/{name}_RIGHT_AIR{f}.png"):
         return &"{name}_RIGHT_AIR{f}"
 
     elif vel >= 1:
-      if fileExists(&"textures/{name}_RIGHT_WALK_{wCount}{f}.png"):
+      if fileExists(&"../data/textures/{name}_RIGHT_WALK_{wCount}{f}.png"):
         return &"{name}_RIGHT_WALK_{wCount}{f}"
       else:
         wCount = 0  
 
-    if fileExists(&"textures/{name}_RIGHT{f}.png"):
+    if fileExists(&"../data/textures/{name}_RIGHT{f}.png"):
       return &"{name}_RIGHT{f}"
   else: 
     return name
@@ -112,8 +123,8 @@ proc updateCollision*(target: string): array[4, float] =
   if target.contains("_FIRE"):
     target = target[0 .. ^6]
 
-  if fileExists(&"collision/{target}"):
-    let data: seq[string] = readFile(&"collision/{target}")[0 .. ^2].split(',')
+  if fileExists(&"../data/collision/{target}"):
+    let data: seq[string] = readFile(&"../data/collision/{target}")[0 .. ^2].split(',')
     var newValues: array[4, float]
     for i in 0 .. 3:
       newValues[i] = data[i].parseFloat
@@ -122,8 +133,7 @@ proc updateCollision*(target: string): array[4, float] =
     return [0,0,48,48]
 
 proc createEntity*(pos: array[2, float], target: string, pf: float): base =
-  let target: string = target
-
+  let target: string = &"../data/{target}"
   if fileExists(target):
     var newEntity: base
 

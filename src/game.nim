@@ -1,3 +1,14 @@
+#[
+Rockman-X-Fossil-Hunter
+Copyright (C) 2026 Kyphosula
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+]#
+
 import std/[os, sequtils, strutils, strformat, math]
 import kirpi, entities, npcLogic
 
@@ -26,7 +37,7 @@ var
   screenHeight, screenWidth: int
 
 let walkTextures: seq[tuple[kind: PathComponent, path: string]] = 
-  toSeq(walkDir("textures", relative = true))
+  toSeq(walkDir("../data/textures", relative = true))
 
 proc match(search: string, option: int): Texture =
   for i in 0 .. textureList.len - 1:
@@ -34,7 +45,7 @@ proc match(search: string, option: int): Texture =
       return textures[i]
 
 proc loadMap(name: string) =
-  map = readFile("maps/" & name & "/main").splitLines
+  map = readFile("../data/maps/" & name & "/main").splitLines
   upperX = map[0].len - 1
   upperY = map.len - 2
 
@@ -45,9 +56,9 @@ proc loadMap(name: string) =
 
   let 
     loadTextures: seq[string] = 
-      readFile("maps/" & name & "/textures").splitLines
+      readFile("../data/maps/" & name & "/textures").splitLines
     startPosition: seq[string] =
-      readFile("maps/" & name & "/start").splitLines[0].split(',')
+      readFile("../data/maps/" & name & "/start").splitLines[0].split(',')
   
   eSeq[0].pos[0] = startPosition[0].parseFloat * bits.toFloat
   eSeq[0].pos[1] = startHeight + startPosition[1].parseFloat * bits.toFloat
@@ -62,7 +73,7 @@ proc loadMap(name: string) =
     let tileMatch: seq[string] = loadTextures[i].split('|')
     for j in 0 .. walkTextures.len - 1:
       if walkTextures[j][1].split('.')[0] == tileMatch[1]:
-        textures[i] = newTexture("textures/" & walkTextures[j][1], Nearest)
+        textures[i] = newTexture("../data/textures/" & walkTextures[j][1], Nearest)
         textureList.add(tileMatch)
         break
 
