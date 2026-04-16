@@ -24,6 +24,6 @@ if ( -not $checkPathBin -eq "True" ) {
 
 nim c `
   -d:release `
-  .\src\main.nim
+  .\src\game.nim
 
-mv -Force .\src\main.exe .\bin
+mv -Force .\src\game.exe .\bin
