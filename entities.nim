@@ -39,9 +39,6 @@ proc storeAdd*(name: string, value: float) =
   newStore.value = value
   eStore.add(newStore)
 
-proc getWC*(): int =
-  return wCount + 1
-
 proc updateFire*(): bool =
   if fCount > 0:
     fCount -= 1
