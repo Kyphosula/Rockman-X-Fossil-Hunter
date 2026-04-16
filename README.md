@@ -5,8 +5,8 @@ Tiles are 16x16, by default the game will scale from 480x270.<br><br>
 For more context I'm a novice nim user trying out game development. I've been interested in the
 Rockman X games for quite a while. I kind just made up the physics so don't expect it to play identically.
 
-## Made with Kirpi
-This project is made with kirpi, an elegant, lightweight game framework for Nim.<br>
+## Made with kirpi
+This project is made with kirpi: an elegant, lightweight game framework for Nim.<br>
 You should check out kirpi here: https://github.com/erayzesen/kirpi
 
 ## Controls
