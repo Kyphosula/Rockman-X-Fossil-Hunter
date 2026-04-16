@@ -10,7 +10,7 @@ This project is made with kirpi: an elegant, lightweight game framework for Nim.
 You should check out kirpi here: https://github.com/erayzesen/kirpi
 
 ## Controls
-Currently not re-bindable
+Currently not re-bindable.<br>
 You can hold the dash button for mono and consecutive jumps and wall jumps.
 - Left: Accelerate left
 - Right: Accelerate right
