@@ -111,12 +111,12 @@ proc drawMap(name: string) =
       eSeq[id].pos[1] - scrollPos[1]
     )
 
-proc checkTile(x, y: int): char =
+proc checkTile(xy: array[2, float]): char =
   # This will include adjusting tile hitboxes eventually
-  let my: int = (y / bits).trunc.toInt
-  let mx: int = (x / bits).trunc.toInt
+  let my: int = (xy[1] / bits.toFloat).trunc.toInt
+  let mx: int = (xy[0] / bits.toFloat).trunc.toInt
   if my >= 0 and my < map.len and mx >= 0 and mx < map[0].len:
-    return map[(y / bits).trunc.toInt][(x / bits).trunc.toInt]
+    return map[(xy[1] / bits.toFloat).trunc.toInt][(xy[0] / bits.toFloat).trunc.toInt]
   else:
     return '*'
 
@@ -133,7 +133,7 @@ proc collision(id: int, direction: string, hit: bool, ovr: array[4, int]): bool 
   case direction
   of "right":
     for i in lowerYBound .. upperYBound:
-      if checkTile((posX + eSeq[id].colX2).toInt, i) != ' ':
+      if checkTile([posX + eSeq[id].colX2, i.toFloat]) != ' ':
         if hit:
           eSeq[id].vel[0] = 0
           if eSeq[id].accel[0] > 0:
@@ -144,7 +144,7 @@ proc collision(id: int, direction: string, hit: bool, ovr: array[4, int]): bool 
 
   of "left":
     for i in lowerYBound .. upperYBound:
-      if checkTile((posX + eSeq[id].colX1).toInt - 1, i) != ' ':
+      if checkTile([posX + eSeq[id].colX1 - 1, i.toFloat]) != ' ':
         if hit:
           eSeq[id].vel[0] = 0
           if eSeq[id].accel[0] < 0:
@@ -162,10 +162,10 @@ proc collision(id: int, direction: string, hit: bool, ovr: array[4, int]): bool 
 
     for i in lowerXBound .. upperXBound:
       var skip: bool
-      if checkTile(i, (posY + eSeq[id].colY2).toInt) != ' ':
+      if checkTile([i.toFloat, posY + eSeq[id].colY2]) != ' ':
         if phantom == true:
           if i - lowerXBound < 1 or i >= upperXBound - 1:
-            if checkTile(i, (posY + eSeq[id].colY2).toInt - 1) != ' ':
+            if checkTile([i.toFloat, posY + eSeq[id].colY2 - 1]) != ' ':
               skip = true
         
         if skip == false:
@@ -179,7 +179,7 @@ proc collision(id: int, direction: string, hit: bool, ovr: array[4, int]): bool 
 
   of "up":
     for i in lowerXBound .. upperXBound:
-      if checkTile(i, (posY + eSeq[id].colY1).toInt - 1) != ' ':
+      if checkTile([i.toFloat, posY + eSeq[id].colY1 - 1]) != ' ':
         if hit:
           eSeq[id].vel[1] = 0
           if eSeq[id].accel[1] < 0:
@@ -264,6 +264,11 @@ proc updateAll(scrollTarget: int) =
 
     var skip: bool
     if variant == "projectile":
+      if eSeq[eDex].vel[0] == 0:
+        let centreX: float = eSeq[eDex].pos[0] + eSeq[eDex].size[0] / 2
+        let centreY: float = eSeq[eDex].pos[1] + eSeq[eDex].size[1] / 2
+        if checkTile([centreX, centreY]) != ' ': eSeq[eDex].accel[0] = 0
+
       if eSeq[eDex].accel[0] == 0:
         if eSeq[eDex].vel[0] == 0:
           eSeq.delete(eDex)
