@@ -11,7 +11,7 @@ You should check out kirpi here: https://github.com/erayzesen/kirpi
 
 ## Controls
 Currently not re-bindable
-You can hold the dash button for mono and consecutive jumps and wall jumps
+You can hold the dash button for mono and consecutive jumps and wall jumps.
 - Left: Accelerate left
 - Right: Accelerate right
 - X: Shoot
