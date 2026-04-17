@@ -377,13 +377,19 @@ proc load() =
   let
     w: float = getWidth()
     h: float =  getHeight()
+
+  setFullScreenMode(false)
+
+  var
     sx: float = w / 480
     sy: float = h / 270
+
+  if sx > sy: sx = sy
+  if sy > sx: sy = sx
 
   screenWidth = (w / sx).toInt
   screenHeight = (h / sy).toInt
 
-  setFullScreenMode(false)
 
   scale(sx,sy)
   eSeq.add(createEntity([0.0, 0.0], "entities/RockmanX", pFact))
@@ -495,11 +501,10 @@ proc update(dt: float) =
   updateAll(0)
 
 proc draw() =
-  clear(Black)
-  setColor(White)
   drawMap("test")
 
 proc config(appSettings:var AppSettings) =
+  appSettings.antialias = false
   appSettings.window.width = screenWidth
   appSettings.window.height = screenHeight
   appSettings.window.borderless = true
