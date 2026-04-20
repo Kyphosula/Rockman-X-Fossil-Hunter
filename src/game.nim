@@ -131,7 +131,7 @@ proc checkTile(xy: array[2, float]): char =
   else:
     return '*'
 
-proc collision(id: int, direction: string, hit: bool, ovr: array[4, int]): bool =
+proc collision(id: int, direction: string, hit, all: bool, ovr: array[4, int]): bool =
   let 
     posX: float = eSeq[id].pos[0]
     posY: float = eSeq[id].pos[1] - startHeight
@@ -150,7 +150,9 @@ proc collision(id: int, direction: string, hit: bool, ovr: array[4, int]): bool 
           if eSeq[id].accel[0] > 0:
             eSeq[id].accel[0] = 0
         eSeq[id].activeCollision.right = true
-        return true
+        if all == false: return true
+      elif all: return false
+    if all: return true
     eSeq[id].activeCollision.right = false
 
   of "left":
@@ -161,7 +163,9 @@ proc collision(id: int, direction: string, hit: bool, ovr: array[4, int]): bool 
           if eSeq[id].accel[0] < 0:
             eSeq[id].accel[0] = 0
         eSeq[id].activeCollision.left = true
-        return true
+        if all == false: return true
+      elif all: return false
+    if all: return true
     eSeq[id].activeCollision.left = false
 
   of "down":
@@ -246,7 +250,7 @@ proc move(id: int, scroll: bool) =
         setScrollBounds(i)
         if i == 0: scrollDirection = scrollHorizontal[z]
         else: scrollDirection = scrollVertical[z]
-        if collision(id, direction, true, [0,0,0,0]) == false:
+        if collision(id, direction, true, false, [0,0,0,0]) == false:
           if scroll:
             if scrollDirection:
               if k == -1:
@@ -265,7 +269,7 @@ proc move(id: int, scroll: bool) =
       moved = false
       for i in 0 .. 3:
         if checkedCollision[i] == 0:
-          discard collision(id, directions[i], false, [0,0,0,0])
+          discard collision(id, directions[i], false, false, [0,0,0,0])
 
 proc setCollision(id: int, name: string) =
   let newBox: array[4, float] = updateCollision(name)
@@ -355,7 +359,7 @@ proc checkSlide(direction: string): bool =
   if isKeyDown(C) and player(eSeq[0]).jumpBuffer != player(eSeq[0]).maxJumpBuffer:
     return false
 
-  if collision(0, direction, true, [24,0,0,0]) and collision(0, direction, true, [0,-24,0,0]):
+  if collision(0, direction, true, true, [0,0,0,0]):
     if player(eSeq[0]).isGrounded == false:
       player(eSeq[0]).isGrounded = true
       slide = 0.3
