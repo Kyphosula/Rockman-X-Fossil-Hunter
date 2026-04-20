@@ -3,5 +3,7 @@ All images are licensed under CC BY-SA 4.0 https://creativecommons.org/licenses/
 - blank.png
 - lemon.png
 - sky.png
+- Met_LEFT.png
+- Met_RIGHT.png
 
 The Rockman X sprites are inspired by the Gaea armor and original SNES sprite.
