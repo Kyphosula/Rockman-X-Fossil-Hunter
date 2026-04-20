@@ -9,14 +9,32 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 ]#
 
-import entities
+import entities, strutils
 
 type
   updateNpc* = object
     updateNeeded*: bool
-    textureName*: string
-    accel*: array[2, float]
+    npcData*: base
     addEntities*: seq[base]
 
-proc calcNpc*(npc: base): updateNpc =
-  discard
+var update: updateNpc
+
+proc metEnemy(npc, player: base): base =
+  if player.pos[0] < npc.pos[0]:
+    if npc.facing == 1: 
+      npc.facing = -1
+      npc.textureName = "Met_LEFT"
+      update.updateNeeded = true
+  else: 
+    if npc.facing == -1:
+      npc.facing = 1
+      npc.textureName = "Met_RIGHT"
+      update.updateNeeded = true
+    
+  return npc
+
+proc calcNpc*(npc, player: base): updateNpc =
+  case npc.textureName.split('_')[0]
+  of "Met": update.npcData = metEnemy(npc, player)
+  else: discard
+  return update

@@ -174,3 +174,12 @@ proc createEntity*(pos: array[2, float], target: string, pf: float): base =
     newEntity.pos = pos
 
     return newEntity
+
+proc matchEntity*(map: string, coords: array[2, int]): string =
+  let entityList: seq[string] = readFile(&"../data/maps/{map}/entityList").splitLines
+  for i in 0 .. entityList.len - 2:
+    let eSplit: seq[string] = entityList[0].split(' ')
+    echo eSplit
+    echo coords
+    if eSplit[0] == &"{coords[0]},{coords[1]}":
+      return eSplit[1]

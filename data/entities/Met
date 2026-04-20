@@ -1,0 +1,6 @@
+Texture: Met_RIGHT
+Variant: npc
+Size: 16 16
+BoxCollision: 0 0 16 16
+MaxAccel: 0 0
+MaxVel: 0 0

@@ -110,10 +110,17 @@ proc drawMap(name: string) =
 
   for y in lowerYBound .. upperYBound:
     for x in lowerXBound .. upperXBound:
-      let tile = match(&"{map[y][x]}", 0)
-      let tileY: float = startHeight + (y.toFloat * bits.toFloat)
-      let tileX: float = x.toFloat * bits.toFloat
-      draw(tile, tileX - scrollPos[0], tileY - scrollPos[1])
+      let 
+        tileY: float = startHeight + (y.toFloat * bits.toFloat) - scrollPos[1]
+        tileX: float = x.toFloat * bits.toFloat - scrollPos[0]
+        mChar: string = &"{map[y][x]}"
+
+      if mChar == "E": 
+        eSeq.add(createEntity([tileX, tileY], matchEntity(name, [x, y]), pFact))
+        map[y][x] = ' '
+      else: 
+        let tile = match(mChar, 0)
+        draw(tile, tileX, tileY)
   
   for id in 0 .. eSeq.len - 1:
     draw(
@@ -305,12 +312,12 @@ proc updateAll(scrollTarget: int) =
       move(eDex, scrollScreen)
 
     if variant == "npc":
-      let updateData: updateNpc = calcNpc(eSeq[edex])
+      let updateData: updateNpc = calcNpc(eSeq[edex], eSeq[0])
       if updateData.updateNeeded:
-        if eSeq[eDex].textureName != updateData.textureName:
-          eSeq[eDex].textureName = updateData.textureName
-          setCollision(eDex, updateData.textureName)
-        
+        if eSeq[eDex].textureName != updateData.npcData.textureName:
+          setCollision(eDex, updateData.npcData.textureName)
+       
+        eSeq[eDex] = updateData.npcData
         if updateData.addEntities.len > 0:
           eSeq.add(updateData.addEntities)
 
