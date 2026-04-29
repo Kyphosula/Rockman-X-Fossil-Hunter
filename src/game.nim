@@ -219,8 +219,8 @@ proc move(id: int, scroll: bool) =
       if accel.abs > maxAccel:
         accel = maxAccel * accelDirection
         eSeq[id].accel[i] = accel
+      eSeq[id].vel[i] += accel
 
-    eSeq[id].vel[i] += accel
     var vel: int = eSeq[id].vel[i].trunc.toInt
     var checkedCollision: array[4, int]
     if vel.abs != 0:
