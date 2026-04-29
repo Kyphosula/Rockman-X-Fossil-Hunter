@@ -8,8 +8,8 @@ proc metEnemy*(npc, target: base): updateNpc =
 
   if metTimer > 0:
     metTimer -= 1
-  else:
-    update.updateNeeded = true
+    if metTimer == 1:
+      update.updateNeeded = true
 
   if player(target).fire:
     if target.pos[1] + target.colY2 >= npc.pos[1] + npc.colY2:
@@ -17,7 +17,7 @@ proc metEnemy*(npc, target: base): updateNpc =
         name = name & "_HIDE"
         npc.textureName = name
         update.updateNeeded = true
-        metTimer = 20
+        metTimer = 21
 
   if target.pos[0] + target.colX2 / 2 < npc.pos[0] + npc.colX2 / 2:
     if npc.facing == 1 or update.updateNeeded: 
